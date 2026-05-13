@@ -57,17 +57,24 @@ export default function EditProfileDialog({
     e.preventDefault();
     if (!name.trim()) return;
     try {
-      let avatarBlob = currentProfile.avatar;
+      let avatarBlob = currentProfile?.avatar;
 
-      // Handle avatar upload - create a local blob URL
+      // Upload avatar to Firebase Storage for a permanent URL
       if (avatarFile) {
         try {
-          const arrayBuffer = await avatarFile.arrayBuffer();
-          const blob = ExternalBlob.fromBytes(new Uint8Array(arrayBuffer));
-          await updateProfileImage.mutateAsync(blob);
-          avatarBlob = blob;
-        } catch {
-          // If ExternalBlob fails (no backend), use a local object URL
+          const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+          const { storage, getCurrentUid } = await import("../firebase");
+          const uid = getCurrentUid();
+          const storageRef = ref(storage, `avatars/${uid}_${Date.now()}`);
+          await uploadBytes(storageRef, avatarFile);
+          const downloadUrl = await getDownloadURL(storageRef);
+          avatarBlob = {
+            getDirectURL: () => downloadUrl,
+            getBytes: async () => new Uint8Array(await avatarFile.arrayBuffer()),
+          } as any;
+        } catch (err) {
+          console.error("Avatar upload failed:", err);
+          // Fallback to local blob URL
           const localUrl = URL.createObjectURL(avatarFile);
           avatarBlob = {
             getDirectURL: () => localUrl,
