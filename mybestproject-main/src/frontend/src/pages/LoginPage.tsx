@@ -42,7 +42,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         await loginWithEmail(email, password);
       }
       if (onLogin) onLogin();
-      window.location.href = "/";
+      // Auth state change is handled reactively by onAuthStateChanged in App.tsx
+      // No hard reload needed — React will re-render to show AuthenticatedApp
     } catch (err: any) {
       const code = err?.code || "";
       if (code === "auth/email-already-in-use") setError("Account exists. Switch to Login.");

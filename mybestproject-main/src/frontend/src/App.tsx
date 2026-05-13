@@ -108,11 +108,12 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    import("./firebase").then(({ auth }) => {
-      const { onAuthStateChanged } = require("firebase/auth");
-      onAuthStateChanged(auth, (user: any) => {
-        setFirebaseUser(user);
-        setAuthChecked(true);
+    import("firebase/auth").then(({ onAuthStateChanged: listen }) => {
+      import("./firebase").then(({ auth }) => {
+        listen(auth, (user) => {
+          setFirebaseUser(user);
+          setAuthChecked(true);
+        });
       });
     }).catch(() => setAuthChecked(true));
   }, []);
