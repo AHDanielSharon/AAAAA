@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: socionet
+    runtime: static
+    buildCommand: cd src/frontend && npm install && npm run build
+    staticPublishPath: src/frontend/dist
+    envVars:
+      - key: DFX_NETWORK
+        value: ic
+      - key: CANISTER_ID_BACKEND
+        value: br5f7-7uaaa-aaaaa-qaaca-cai
+      - key: II_URL
+        value: https://identity.internetcomputer.org/
+      - key: STORAGE_GATEWAY_URL
+        value: https://blob.caffeine.ai
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

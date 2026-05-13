@@ -1,0 +1,28 @@
+{
+  "overview": "SOCIONET – A Global Social Media Web Platform built on the Internet Computer blockchain. Features reels, stories, real-time messaging, video calling, push notifications, and an AI assistant with a premium glassmorphic mobile-first UI.",
+  "features": [
+    "Push notifications that ring even when app is closed",
+    "Incoming call alerts with ringtone on locked screen",
+    "System-level OS notifications for messages",
+    "1-to-1 WebRTC video calling",
+    "Reels with likes, comments, and sharing",
+    "24-hour stories",
+    "Real-time messaging with media attachments",
+    "Glassmorphic premium dark/light UI",
+    "Floating AI assistant",
+    "PWA installable on Android"
+  ],
+  "category": "social-media",
+  "tags": [
+    "social-media",
+    "blockchain",
+    "internet-computer",
+    "pwa",
+    "video-calling",
+    "push-notifications",
+    "motoko",
+    "react",
+    "webrtc"
+  ],
+  "last_updated": "2026-05-08T16:25:18.312Z"
+}
