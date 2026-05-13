@@ -55,16 +55,48 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background safe-pb-nav animate-page-in">
-      {/* ═══ COVER BANNER ═══ */}
-      <div className="relative h-48 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-accent to-secondary animate-gradient-shift bg-[length:200%_200%]" />
-        <div className="absolute inset-0 bg-black/20" />
+      {/* ═══ COVER BANNER (click to upload) ═══ */}
+      <div className="relative h-48 w-full overflow-hidden group cursor-pointer"
+        onClick={() => {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = "image/*";
+          input.onchange = async (e: any) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+              const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+              const { storage, getCurrentUid } = await import("../firebase");
+              const storageRef = ref(storage, `banners/${getCurrentUid()}_${Date.now()}`);
+              await uploadBytes(storageRef, file);
+              const url = await getDownloadURL(storageRef);
+              localStorage.setItem("socionet_banner", url);
+              window.location.reload();
+            } catch (err) {
+              console.error("Banner upload failed:", err);
+              const url = URL.createObjectURL(file);
+              localStorage.setItem("socionet_banner", url);
+              window.location.reload();
+            }
+          };
+          input.click();
+        }}
+      >
+        {localStorage.getItem("socionet_banner") ? (
+          <img src={localStorage.getItem("socionet_banner")!} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-accent to-secondary animate-gradient-shift bg-[length:200%_200%]" />
+        )}
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-white font-bold text-sm bg-black/50 px-4 py-2 rounded-full">📷 Change Cover</span>
+        </div>
         <div className="absolute top-6 right-6 flex gap-2">
-          <button className="p-2.5 rounded-full glass text-white hover:bg-white/20 transition-colors">
+          <button onClick={(e) => e.stopPropagation()} className="p-2.5 rounded-full glass text-white hover:bg-white/20 transition-colors">
             <Settings size={20} />
           </button>
           <button 
-            onClick={handleLogout}
+            onClick={(e) => { e.stopPropagation(); handleLogout(); }}
             className="p-2.5 rounded-full glass text-white hover:bg-red-500/20 transition-colors"
           >
             <LogOut size={20} className="text-red-400" />

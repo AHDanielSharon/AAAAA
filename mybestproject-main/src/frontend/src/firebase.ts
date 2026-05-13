@@ -1,6 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  onAuthStateChanged, signOut, type User
+} from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -18,20 +21,49 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
+// Auth state promise
 let _authResolve: (uid: string) => void;
 export const authReady = new Promise<string>((resolve) => {
   _authResolve = resolve;
 });
 
-onAuthStateChanged(auth, async (user) => {
+let _currentUser: User | null = null;
+
+onAuthStateChanged(auth, (user) => {
+  _currentUser = user;
   if (user) {
     _authResolve(user.uid);
-  } else {
-    const cred = await signInAnonymously(auth);
-    _authResolve(cred.user.uid);
   }
 });
 
 export function getCurrentUid(): string {
-  return auth.currentUser?.uid || "anonymous";
+  return _currentUser?.uid || "anonymous";
+}
+
+export function isLoggedIn(): boolean {
+  return _currentUser !== null;
+}
+
+export function getCurrentUser(): User | null {
+  return _currentUser;
+}
+
+// Sign up with email + password
+export async function signUpWithEmail(email: string, password: string): Promise<string> {
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  _authResolve(cred.user.uid);
+  return cred.user.uid;
+}
+
+// Login with email + password
+export async function loginWithEmail(email: string, password: string): Promise<string> {
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  _authResolve(cred.user.uid);
+  return cred.user.uid;
+}
+
+// Logout
+export async function logoutUser(): Promise<void> {
+  await signOut(auth);
+  _currentUser = null;
 }

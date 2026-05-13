@@ -1,138 +1,191 @@
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
-import { Film, Lock, MessageCircle, Sparkles, Zap, ShieldCheck, Rocket } from "lucide-react";
-import { useCallback } from "react";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
-import ThemeToggle from "../components/ThemeToggle";
-import { Button } from "../components/ui/button";
-
-const FEATURES = [
-  { icon: Film, title: "Reels", desc: "Immersive Video", color: "text-primary" },
-  { icon: Zap, title: "Stories", desc: "Daily Moments", color: "text-accent" },
-  { icon: MessageCircle, title: "Chat", desc: "Secure DMs", color: "text-secondary" },
-];
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Eye, EyeOff, Mail, Lock, User, Sparkles, ArrowRight } from "lucide-react";
+import { signUpWithEmail, loginWithEmail } from "../firebase";
 
 interface LoginPageProps {
-  onDemoLogin?: () => void;
+  onLogin?: () => void;
 }
 
-export default function LoginPage({ onDemoLogin }: LoginPageProps) {
-  const { login, loginStatus, loginError, isInitializing } = useInternetIdentity();
-  const isLoggingIn = loginStatus === "logging-in";
+export default function LoginPage({ onLogin }: LoginPageProps) {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = useCallback(async () => {
-    if (isInitializing || isLoggingIn) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await login();
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast.error(err?.message || "Login failed. Please try again.");
+      if (mode === "signup") {
+        if (!name.trim()) { setError("Enter your name"); setLoading(false); return; }
+        const uid = await signUpWithEmail(email, password);
+        // Save profile to Firestore
+        const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+        const { db } = await import("../firebase");
+        await setDoc(doc(db, "users", uid), {
+          name: name.trim(),
+          bio: "",
+          avatarUrl: "",
+          email: email,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          following: [],
+          followers: [],
+        });
+      } else {
+        await loginWithEmail(email, password);
+      }
+      if (onLogin) onLogin();
+      window.location.href = "/";
+    } catch (err: any) {
+      const code = err?.code || "";
+      if (code === "auth/email-already-in-use") setError("Account exists. Switch to Login.");
+      else if (code === "auth/invalid-credential" || code === "auth/wrong-password") setError("Wrong email or password.");
+      else if (code === "auth/user-not-found") setError("No account found. Sign up first.");
+      else if (code === "auth/weak-password") setError("Password must be 6+ characters.");
+      else if (code === "auth/invalid-email") setError("Invalid email address.");
+      else setError(err?.message || "Something went wrong.");
     }
-  }, [login, isInitializing, isLoggingIn]);
+    setLoading(false);
+  };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-background p-6">
-      {/* ═══ ANIMATED BACKGROUND ═══ */}
-      <div className="absolute inset-0 pointer-events-none">
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_0%,transparent_70%)]" 
-        />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150" />
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-1/4 -right-20 w-72 h-72 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-secondary/5 blur-3xl" />
       </div>
 
-      <div className="absolute top-6 right-6 z-50">
-        <ThemeToggle />
-      </div>
-
-      {/* ═══ CONTENT ═══ */}
-      <div className="relative z-10 w-full max-w-lg flex flex-col items-center text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          className="mb-12"
-        >
-          <div className="relative p-1 rounded-[3rem] bg-gradient-to-tr from-primary via-accent to-secondary animate-gradient-shift shadow-2xl">
-            <div className="p-4 bg-background rounded-[2.8rem]">
-              <img 
-                src="/assets/generated/socionet-logo-transparent.dim_200x200.png" 
-                alt="Logo" 
-                className="w-24 h-24 object-contain animate-floating" 
-              />
-            </div>
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-4 border border-dashed border-primary/20 rounded-[4rem] pointer-events-none" 
-            />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-4 mb-16"
-        >
-          <h1 className="text-6xl font-black tracking-tighter font-display">
-            SOCIO<span className="text-primary">NET</span>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-sm relative z-10"
+      >
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+            className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl"
+            style={{ boxShadow: "0 0 40px oklch(var(--primary) / 0.4)" }}
+          >
+            <Sparkles className="text-white" size={36} />
+          </motion.div>
+          <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+            SOCIONET
           </h1>
-          <p className="text-lg text-muted-foreground font-medium max-w-xs mx-auto">
-            The next generation of social interaction, powered by <span className="text-foreground font-bold">Web3</span>.
+          <p className="text-muted-foreground text-sm mt-2 font-medium">
+            {mode === "login" ? "Welcome back" : "Create your account"}
           </p>
-        </motion.div>
-
-        {/* ═══ FEATURES ═══ */}
-        <div className="grid grid-cols-3 gap-4 w-full mb-16">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + (i * 0.1) }}
-              className="flex flex-col items-center gap-3 p-4 rounded-3xl glass border-none shadow-premium-sm"
-            >
-              <f.icon size={24} className={f.color} />
-              <div className="space-y-0.5">
-                <p className="text-xs font-black uppercase tracking-widest">{f.title}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">{f.desc}</p>
-              </div>
-            </motion.div>
-          ))}
         </div>
 
-        {/* ═══ CTA BUTTONS ═══ */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 }}
-          className="w-full space-y-4"
-        >
-          {/* Primary: Enter with Demo Mode (works without Docker) */}
-          <Button
-            onClick={onDemoLogin}
-            className="w-full h-16 rounded-[2rem] text-lg font-black bg-primary text-primary-foreground hover:opacity-90 shadow-premium-lg transition-all active:scale-95 group relative overflow-hidden"
-          >
-            <span className="flex items-center gap-3 relative z-10">
-              <Rocket size={20} />
-              Enter Socionet
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
-          </Button>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="relative"
+            >
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <input
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-13 pl-12 pr-4 rounded-2xl bg-muted/40 border border-border/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                style={{ height: 52 }}
+              />
+            </motion.div>
+          )}
 
-          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-            <ShieldCheck size={16} />
-            <span className="text-xs font-bold uppercase tracking-widest">End-to-End Privacy Guaranteed</span>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full pl-12 pr-4 rounded-2xl bg-muted/40 border border-border/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+              style={{ height: 52 }}
+            />
           </div>
-        </motion.div>
-      </div>
 
-      <footer className="absolute bottom-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 text-center">
-        Global Network • 2026 • SocioNet Labs
-      </footer>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full pl-12 pr-12 rounded-2xl bg-muted/40 border border-border/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+              style={{ height: 52 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          {error && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-400 text-sm font-medium text-center bg-red-500/10 rounded-xl px-4 py-2"
+            >
+              {error}
+            </motion.p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-bold text-base flex items-center justify-center gap-2 shadow-xl transition-all active:scale-[0.98] disabled:opacity-50"
+            style={{
+              height: 52,
+              boxShadow: "0 0 30px oklch(var(--primary) / 0.3)",
+            }}
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                {mode === "login" ? "Login" : "Create Account"}
+                <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Toggle */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-muted-foreground">
+            {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+              className="text-primary font-bold hover:underline"
+            >
+              {mode === "login" ? "Sign Up" : "Login"}
+            </button>
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

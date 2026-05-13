@@ -104,27 +104,18 @@ function AuthenticatedApp() {
 }
 
 export default function App() {
-  const { identity, isInitializing: authInitializing, loginStatus } = useInternetIdentity();
-  const [timedOut, setTimedOut] = useState(false);
-  // "Demo mode" – user chose to enter without real II auth
-  const [demoMode, setDemoMode] = useState(() => {
-    return localStorage.getItem("socionet_demo_mode") === "true";
-  });
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (authInitializing) setTimedOut(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [authInitializing]);
-
-  const isInitializing = authInitializing && !timedOut;
-
-  useEffect(() => {
-    if (loginStatus === "success" && identity) {
-      console.log("Login successful, principal:", identity.getPrincipal().toString());
-    }
-  }, [loginStatus, identity]);
+    import("./firebase").then(({ auth }) => {
+      const { onAuthStateChanged } = require("firebase/auth");
+      onAuthStateChanged(auth, (user: any) => {
+        setFirebaseUser(user);
+        setAuthChecked(true);
+      });
+    }).catch(() => setAuthChecked(true));
+  }, []);
 
   // Service Worker ringtone handler
   useEffect(() => {
@@ -163,9 +154,7 @@ export default function App() {
           }
         }
         ringTimeout = setTimeout(stopRing, durationMs + 200);
-      } catch {
-        // AudioContext unavailable
-      }
+      } catch {}
     }
 
     function stopRing() {
@@ -188,7 +177,7 @@ export default function App() {
   }, []);
 
   // Loading screen
-  if (isInitializing) {
+  if (!authChecked) {
     return (
       <ThemeProvider>
         <div className="flex h-[100dvh] items-center justify-center gradient-bg">
@@ -206,20 +195,15 @@ export default function App() {
     );
   }
 
-  const isAuthenticated = !!identity;
-
-  // If user is authenticated via real II, or chose demo mode → show the app
-  if (isAuthenticated || demoMode) {
+  // If user is logged in → show the app
+  if (firebaseUser) {
     return <AuthenticatedApp />;
   }
 
-  // Show login page with demo mode handler
+  // Show login page
   return (
     <ThemeProvider>
-      <LoginPage onDemoLogin={() => {
-        localStorage.setItem("socionet_demo_mode", "true");
-        setDemoMode(true);
-      }} />
+      <LoginPage />
       <Toaster />
     </ThemeProvider>
   );
