@@ -19,6 +19,7 @@ import MessagesPage from "./pages/MessagesPage";
 import ProfilePage from "./pages/ProfilePage";
 import ReelsPage from "./pages/ReelsPage";
 import ShieldPage from "./pages/ShieldPage";
+import IncomingCallListener from "./components/IncomingCallListener";
 
 const rootRoute = createRootRoute({
   component: MainLayout,
@@ -94,6 +95,7 @@ function AuthenticatedApp() {
   return (
     <ThemeProvider>
       <PushSubscriber />
+      <IncomingCallListener />
       <RouterProvider router={router} />
       {showProfileSetup && <ProfileSetupModal />}
       <Toaster />

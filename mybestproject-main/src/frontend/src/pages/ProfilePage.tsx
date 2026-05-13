@@ -89,7 +89,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex gap-2 mb-2">
-            <EditProfileDialog currentProfile={userProfile!} />
+            <EditProfileDialog currentProfile={userProfile || { name: "", bio: "", avatar: null, balance: BigInt(0) } as any} />
             <button className="p-2.5 rounded-2xl glass-morphism !rounded-2xl border-none hover:bg-muted/50 transition-colors">
               <Share2 size={20} className="text-foreground" />
             </button>

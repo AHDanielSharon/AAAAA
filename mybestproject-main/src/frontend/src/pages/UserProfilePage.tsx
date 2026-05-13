@@ -10,8 +10,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FriendRequestStatus } from "../backend";
+import { motion, AnimatePresence } from "motion/react";
 import StoryCard from "../components/StoryCard";
 import StoryViewer from "../components/StoryViewer";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
@@ -52,7 +51,7 @@ export default function UserProfilePage({
   const currentUserPrincipal = identity?.getPrincipal();
   const isOwnProfile = currentUserPrincipal?.toString() === userPrincipal.toString();
   const isFriend = friends.some(f => f.toString() === userPrincipal.toString());
-  const areFriends = isFriend || friendRequestStatus === FriendRequestStatus.accepted;
+  const areFriends = isFriend || (friendRequestStatus as any)?.__kind__ === "accepted";
 
   const handleMessage = async () => {
     try {
@@ -133,8 +132,8 @@ export default function UserProfilePage({
         {/* ═══ STATS ═══ */}
         <div className="flex gap-8 py-6 border-y border-border/10">
           <StatItem label="Posts" value={userVideos?.length || 0} />
-          <StatItem label="Followers" value="850" />
-          <StatItem label="Following" value="210" />
+          <StatItem label="Followers" value={0} />
+          <StatItem label="Following" value={0} />
         </div>
       </div>
 
