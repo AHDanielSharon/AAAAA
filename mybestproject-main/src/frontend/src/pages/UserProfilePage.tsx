@@ -170,7 +170,7 @@ export default function UserProfilePage({
                 className="relative aspect-square rounded-3xl overflow-hidden group cursor-pointer"
               >
                 <video 
-                  src={video.video.getDirectURL()} 
+                  src={video.file.getDirectURL()} 
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
